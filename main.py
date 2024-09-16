@@ -4,11 +4,20 @@ from passwords_frame import create_passwords_frame
 from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
 from settings_frame import create_settings_frame
+from tkinter.messagebox import showwarning
 
 # Function to insert entry into the table
 def add_entry(website, username, password):
     if website and username and password:
         tree.insert('', 'end', values=(website, username, password))
+
+# Function to remove selected entry
+def remove_entry():
+    selected_item = tree.selection()
+    if selected_item:
+        tree.delete(selected_item)
+    else:
+        showwarning("No Selection", "Please select an entry to remove.")
 
 # Function to open an "add entry" window
 def open_add_entry_window():
@@ -90,7 +99,8 @@ notebook = ttk.Notebook(root)
 notebook.pack(pady=10, expand=True, fill='both')
 
 # Create different tabs (frames)
-passwords_frame, tree = create_passwords_frame(notebook, open_add_entry_window)
+# Create different tabs (frames)
+passwords_frame, tree = create_passwords_frame(notebook, open_add_entry_window, remove_entry)
 password_strength_frame, strength_label = create_password_strength_frame(check_password_strength)
 password_generation_frame, generated_password_entry = create_password_generation_frame(generate_password)
 settings_frame = create_settings_frame()
