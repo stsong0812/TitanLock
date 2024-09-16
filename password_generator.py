@@ -8,5 +8,4 @@ def generate_password():
     password = ''.join(secrets.choice(characters) for _ in range(length))
     return password
 
-# Generate a password
-print("Generated Password:", generate_password())
+
