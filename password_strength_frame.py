@@ -18,4 +18,23 @@ def create_password_strength_frame(check_strength_callback):
     strength_label = Label(password_strength_frame, text="Password strength: ")
     strength_label.pack(pady=10)
 
+    paragraph_text = ('This tool helps you check the strength of your password loosely following password guidelines outlined by the National Institute of Security and Technology:')
+    paragraph_label = Label(password_strength_frame, text=paragraph_text, wraplength=500, justify="left")
+    paragraph_label.pack(pady=10)
+
+
+    # Unordered list items
+    list_items = [
+        "At least 8 characters long",
+        "Includes both uppercase and lowercase letters",
+        "Contains numbers",
+        "Includes special characters (e.g., !, @, #, etc.)",
+        "Avoid common phrases and passwords"
+    ]
+
+    # Add list items as labels with a bullet
+    for item in list_items:
+        list_item_label = Label(password_strength_frame, text=f"• {item}", anchor="w", justify="left")
+        list_item_label.pack(anchor="w", padx=250)
+
     return password_strength_frame, strength_label

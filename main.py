@@ -5,6 +5,9 @@ from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
 from settings_frame import create_settings_frame
 from tkinter.messagebox import showwarning
+import re
+import string
+import os
 
 # Function to insert entry into the table
 def add_entry(website, username, password):
@@ -62,15 +65,30 @@ def check_password_strength(password):
             - Increase strenght depending on complexity
                 - (Length, variety, etc...)
     '''
-    if password:
-        if len(password) < 5:
-            strength_label.config(text="Password strength: Weak")
-        elif len(password) < 10:
-            strength_label.config(text="Password strength: Medium")
-        else:
-            strength_label.config(text="Password strength: Strong")
+    score = 0
+    pass_length = len(password)
+    if pass_length < 8:
+        return(strength_label.config(text="Password is too short, atleast 8 characters"))
+    elif pass_length >= 12:
+        score += 2
     else:
-        strength_label.config(text="Please enter a password")
+        score += 1
+    
+    if re.search(string.ascii_lowercase, password):
+        score += 1
+    if re.search(string.ascii_uppercase, password):
+        score += 1
+    if re.search(string.digits, password):
+        score += 1
+    if re.search('!@#$%^&*', password):
+        score += 1
+
+    if score >= 5:
+        return(strength_label.config(text="Password strength: Strong"))
+    elif score <= 3:
+        return(strength_label.config(text="Password strength: Moderate"))
+    else:
+        return(strength_label.config(text="Password strength: Weak"))
 
 # Include function to generate passwords here:
 def generate_password(length, include_uppercase, include_numbers, include_special_chars):
@@ -99,7 +117,6 @@ notebook = ttk.Notebook(root)
 notebook.pack(pady=10, expand=True, fill='both')
 
 # Create different tabs (frames)
-# Create different tabs (frames)
 passwords_frame, tree = create_passwords_frame(notebook, open_add_entry_window, remove_entry)
 password_strength_frame, strength_label = create_password_strength_frame(check_password_strength)
 password_generation_frame, generated_password_entry = create_password_generation_frame(generate_password)
@@ -127,11 +144,10 @@ def open_master_key_window():
         - If hashes match, user is verified and let user enter application
     '''
     master_key_window = Toplevel(root)
-    master_key_window.title("Enter Master Key")
     master_key_window.geometry('800x500')
 
     master_key_label = Label(master_key_window, text="Enter Master Key:")
-    master_key_label.pack(pady=10)
+    master_key_label.pack(pady=20)
 
     master_key_entry = Entry(master_key_window, show="*")
     master_key_entry.pack(pady=5)
