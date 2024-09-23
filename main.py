@@ -60,13 +60,6 @@ def open_add_entry_window():
 
 # Include function to check password strength here:
 def check_password_strength(password):
-    # Simple placeholder function
-    '''
-    POSSIBLE PASSWORD STRENGHT LOGIC:
-        - Using user input password as parameter:
-            - Increase strenght depending on complexity
-                - (Length, variety, etc...)
-    '''
     score = 0
     pass_length = len(password)
     if pass_length < 8:
@@ -155,8 +148,19 @@ def open_master_key_window():
 
     # Function to validate key
     def validate_master_key():
-        master_key = master_key_entry.get()
-        if master_key:
+        master_key_path = '/etc/TitanLock/masterkey.txt'
+        master_key_plain = master_key_entry.get()
+        if not os.path.exists(master_key_path):
+            try:
+                with open(master_key_path, 'w') as master_key_file:
+                    master_key_file.write(master_key_plain)  # Write the master key to the file
+                    print(f"Master key file created at {master_key_path}")
+            except Exception as e:
+                print(f"An error occurred while creating the file: {e}")
+        else:
+            print("Master key file already exists.")
+
+        if master_key_plain:
             master_key_window.destroy()
             root.deiconify()
 
