@@ -5,6 +5,8 @@ from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
 from settings_frame import create_settings_frame
 from tkinter.messagebox import showwarning
+import hashlib
+from cryptography.fernet import Fernet
 import re
 import string
 import os
@@ -127,22 +129,21 @@ notebook.add(password_strength_frame, text='Password Strength')
 notebook.add(password_generation_frame, text='Password Generation')
 notebook.add(settings_frame, text='Settings')
 
+# Function to create a folder in /etc/ called TitanLock
+def create_titanlock_folder():
+    folder_path = '/etc/TitanLock'
+    try:
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        else:
+            return 0
+    except PermissionError:
+        print("Permission denied: You need to run this script as root (use 'sudo').")
+    except Exception as e:
+        print(f"An error occurred while creating the folder: {e}")
+
 # Include master key function
 def open_master_key_window():
-    # Demo master key window
-    # Need to implement a "set master password" function
-    '''
-     POSSIBLE INITIAL MASTER KEY LOGIC:
-        - Implement a "set master key" function on first program opening
-        - Hash (using SHA256 algorithm) and store specified master key in a text file
-            - Hashing can be done using the hashlib library
-        - Let user enter the application
-
-    POSSIBLE SUBSEQUENT MASTER KEY LOGIC:
-        - Prompt user to input the master key
-        - Hash the entered master key and compare to the one stored locally
-        - If hashes match, user is verified and let user enter application
-    '''
     master_key_window = Toplevel(root)
     master_key_window.geometry('800x500')
 
@@ -165,5 +166,6 @@ def open_master_key_window():
     root.withdraw()
 
 # Main application loop
+create_titanlock_folder()
 open_master_key_window()
 root.mainloop()
