@@ -61,29 +61,38 @@ def open_add_entry_window():
 # Include function to check password strength here:
 def check_password_strength(password):
     score = 0
-    pass_length = len(password)
-    if pass_length < 8:
-        return(strength_label.config(text="Password is too short, atleast 8 characters"))
-    elif pass_length >= 12:
+
+    # Password length check
+    if len(password) >= 12:
         score += 2
-    else:
+    elif len(password) >= 8:
         score += 1
     
-    if re.search(string.ascii_lowercase, password):
+    # Checking for lowercase characters
+    if re.search(r'[a-z]', password):
         score += 1
-    if re.search(string.ascii_uppercase, password):
+    # Checking for uppercase characters
+    if re.search(r'[A-Z]', password):
         score += 1
-    if re.search(string.digits, password):
+    # Checking for digits
+    if re.search(r'[0-9]', password):
         score += 1
-    if re.search('!@#$%^&*', password):
+    # Checking for special characters
+    if re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
         score += 1
 
-    if score >= 5:
-        return(strength_label.config(text="Password strength: Strong"))
-    elif score <= 3:
-        return(strength_label.config(text="Password strength: Moderate"))
+    # Check for common passwords (simple example)
+    common_passwords = ["password", "123456", "123456789", "qwerty", "abc123"]
+    if password.lower() in common_passwords:
+        score -= 2
+
+    # Display password strength based on score
+    if score >= 6:
+        strength_label.config(text="Password strength: Strong")
+    elif 3 <= score < 6:
+        strength_label.config(text="Password strength: Moderate")
     else:
-        return(strength_label.config(text="Password strength: Weak"))
+        strength_label.config(text="Password strength: Weak")
 
 # Include function to generate passwords here:
 def generate_password(length, include_uppercase, include_numbers, include_special_chars):
