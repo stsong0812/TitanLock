@@ -53,7 +53,7 @@ def open_add_entry_window():
         username = username_entry.get()
         password = password_entry.get()
         add_entry(website, username, password)
-        new_window.destroy()    # Close window
+        new_window.destroy()
 
     submit_button = Button(new_window, text="Submit", command=submit_new_entry)
     submit_button.pack(pady=10)
@@ -87,9 +87,9 @@ def check_password_strength(password):
         score -= 2
 
     # Display password strength based on score
-    if score >= 6:
+    if score >= 5:
         strength_label.config(text="Password strength: Strong")
-    elif 3 <= score < 6:
+    elif 3 <= score < 5:
         strength_label.config(text="Password strength: Moderate")
     else:
         strength_label.config(text="Password strength: Weak")
