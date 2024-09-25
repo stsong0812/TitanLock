@@ -5,7 +5,6 @@ from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
 from settings_frame import create_settings_frame
 from tkinter.messagebox import showwarning
-from cryptography.fernet import Fernet
 import secrets
 import string
 import re

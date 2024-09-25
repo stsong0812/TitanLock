@@ -17,6 +17,12 @@ def create_password_generation_frame(generate_password_callback):
     include_numbers = BooleanVar(value=True)
     include_special_chars = BooleanVar(value=True)
 
+
+    paragraph_text = ('Atleast one of the following must be checked (All 3 are recommended):')
+    paragraph_label = Label(password_generation_frame, text=paragraph_text, wraplength=500, justify="left")
+    paragraph_label.pack(pady=10)
+
+
     uppercase_check = Checkbutton(password_generation_frame, text="Include Uppercase Letters", variable=include_uppercase)
     uppercase_check.pack(pady=2)
     numbers_check = Checkbutton(password_generation_frame, text="Include Numbers", variable=include_numbers)
