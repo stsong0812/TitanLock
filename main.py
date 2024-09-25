@@ -5,10 +5,10 @@ from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
 from settings_frame import create_settings_frame
 from tkinter.messagebox import showwarning
-import hashlib
 from cryptography.fernet import Fernet
-import re
+import secrets
 import string
+import re
 import os
 
 # Function to insert entry into the table
@@ -93,22 +93,42 @@ def check_password_strength(password):
         strength_label.config(text="Password strength: Moderate")
     else:
         strength_label.config(text="Password strength: Weak")
-
-# Include function to generate passwords here:
+    
+# Password generation algorithm 
 def generate_password(length, include_uppercase, include_numbers, include_special_chars):
-    # Password generation logic here
-    '''
-    POSSIBLE PASSWORD GENERATION LOGIC:
-        - Import random library to randomize generated passwords
-        - Import string for ascii lowercase, uppercase, digits, and special chars
-        - Check if uppercase, numbers, special characters boolean varaibles are true
-        - Initialize generated password variable with specified length
-            - Use random library to randomize order of input parameters
-    '''
-    generated_password_entry.config(state=NORMAL)
-    generated_password_entry.delete(0, END)
-    generated_password_entry.insert(0, "GeneratedPassword123!")  # Placeholder text
-    generated_password_entry.config(state=DISABLED)
+    try:
+        # Validate length
+        length = int(length)
+        if length < 6 or length > 20:
+            showwarning("Invalid Length", "Password length must be between 6 and 20 characters.")
+            return
+    except ValueError:
+        showwarning("Invalid Input", "Please enter a valid number for password length.")
+        return
+
+    # Build character pool based on user selections
+    characters = string.ascii_lowercase  # Start with lowercase letters
+    
+    if include_uppercase:
+        characters += string.ascii_uppercase
+    if include_numbers:
+        characters += string.digits
+    if include_special_chars:
+        characters += string.punctuation
+
+    # Check if no options were selected
+    if not (include_uppercase or include_numbers or include_special_chars):
+        showwarning("No Options Selected", "Please select at least one character type (uppercase, numbers, special characters).")
+        return
+
+    # Generate the password using the selected character set and length
+    password = ''.join(secrets.choice(characters) for _ in range(length))
+    
+    # Display the generated password in the appropriate entry field
+    generated_password_entry.config(state=NORMAL)  # Allow editing
+    generated_password_entry.delete(0, END)  # Clear current value
+    generated_password_entry.insert(0, password)  # Insert new password
+    generated_password_entry.config(state=DISABLED)  # Disable editing
 
 # Create root window
 root = Tk()

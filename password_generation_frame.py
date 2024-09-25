@@ -1,22 +1,21 @@
-from tkinter import Frame, Label, Entry, Checkbutton, BooleanVar, Button
+from tkinter import Frame, Label, Entry, Checkbutton, BooleanVar, Button, IntVar
 
-# Function to create password tab (frame)
+# Function to create password generation tab (frame)
 def create_password_generation_frame(generate_password_callback):
-    # Currently holds demo logic for checkboxes 
     password_generation_frame = Frame()
     password_generation_frame.pack(fill='both', expand=True)
 
     password_generation_label = Label(password_generation_frame, text="Generate a password here")
     password_generation_label.pack(pady=10)
 
-    length_label = Label(password_generation_frame, text="Password Length:")
+    length_label = Label(password_generation_frame, text="Password Length (6-20 characters):")
     length_label.pack(pady=5)
     length_entry = Entry(password_generation_frame)
     length_entry.pack(pady=5)
 
-    include_uppercase = BooleanVar()
-    include_numbers = BooleanVar()
-    include_special_chars = BooleanVar()
+    include_uppercase = BooleanVar(value=True)
+    include_numbers = BooleanVar(value=True)
+    include_special_chars = BooleanVar(value=True)
 
     uppercase_check = Checkbutton(password_generation_frame, text="Include Uppercase Letters", variable=include_uppercase)
     uppercase_check.pack(pady=2)
