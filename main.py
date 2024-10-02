@@ -9,44 +9,87 @@ import secrets
 import string
 import re
 import os
+import csv
+import uuid
 
-# Function to insert entry into the table
+# Path to the file where entries will be stored
+PASSWORDS_FILE_PATH = '/etc/TitanLock/passwords.csv'
+
+# Function to insert entry into the table and store it in the file
 def add_entry(website, username, password):
     if website and username and password:
-        tree.insert('', 'end', values=(website, username, password))
+        # Generate a unique ID for the entry
+        entry_id = str(uuid.uuid4())
+
+        # Insert into the GUI tree with the generated ID
+        tree.insert('', 'end', iid=entry_id, values=(website, username, password))
+
+        # Append the entry to the CSV file
+        try:
+            with open(PASSWORDS_FILE_PATH, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([entry_id, website, username, password])  # Include ID in CSV
+        except PermissionError:
+            showwarning("Permission Error", "Permission denied: Run the program as root.")
+        except Exception as e:
+            showwarning("Error", f"An error occurred: {e}")
 
 # Function to remove selected entry
 def remove_entry():
     selected_item = tree.selection()
     if selected_item:
+        entry_id = selected_item[0]  # Get the selected entry's ID
         tree.delete(selected_item)
+
+        # Remove entry from the CSV file
+        try:
+            # Read all entries from the CSV
+            with open(PASSWORDS_FILE_PATH, mode='r', newline='') as file:
+                reader = csv.reader(file)
+                rows = [row for row in reader if row[0] != entry_id]  # Exclude the entry with the selected ID
+
+            # Write the remaining entries back to the CSV
+            with open(PASSWORDS_FILE_PATH, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+
+        except Exception as e:
+            showwarning("Error", f"An error occurred while removing the entry: {e}")
     else:
         showwarning("No Selection", "Please select an entry to remove.")
 
+# Function to load stored passwords from the file and display them in the table
+def load_passwords():
+    if os.path.exists(PASSWORDS_FILE_PATH):
+        try:
+            with open(PASSWORDS_FILE_PATH, mode='r', newline='') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    entry_id, website, username, password = row
+                    tree.insert('', 'end', iid=entry_id, values=(website, username, password))
+        except Exception as e:
+            showwarning("Error", f"An error occurred while loading passwords: {e}")
+
 # Function to open an "add entry" window
 def open_add_entry_window():
-    new_window = Toplevel(root)     # Create new window
+    new_window = Toplevel(root)
     new_window.title("Add New Entry")
 
-    # Website field
     website_label = Label(new_window, text="Website:")
     website_label.pack(pady=5)
     website_entry = Entry(new_window)
     website_entry.pack(pady=5)
 
-    # Username field
     username_label = Label(new_window, text="Username:")
     username_label.pack(pady=5)
     username_entry = Entry(new_window)
     username_entry.pack(pady=5)
 
-    # Password field
     password_label = Label(new_window, text="Password:")
     password_label.pack(pady=5)
     password_entry = Entry(new_window, show="*")
     password_entry.pack(pady=5)
 
-    # Submit button functionality
     def submit_new_entry():
         website = website_entry.get()
         username = username_entry.get()
@@ -193,21 +236,28 @@ def open_master_key_window():
             # If master key file exists, validate the entered key
             try:
                 with open(master_key_path, 'r') as master_key_file:
-                    stored_master_key = master_key_file.read().strip()  # Read the stored key
-                    if entered_master_key == stored_master_key:
-                        master_key_window.destroy()
-                        root.deiconify()  # Unlock the main window
-                    else:
-                        showwarning("Invalid Key", "The entered master key is incorrect.")
+                    stored_master_key = master_key_file.read()
+                if entered_master_key == stored_master_key:
+                    print("Master key validated.")
+                    master_key_window.destroy()  # Close the master key window
+                    root.deiconify()  # Unlock the main window
+                else:
+                    showwarning("Invalid Master Key", "The entered master key is incorrect.")
             except Exception as e:
-                print(f"An error occurred while reading the file: {e}")
+                print(f"An error occurred while validating the master key: {e}")
 
     submit_button = Button(master_key_window, text="Submit", command=validate_master_key)
     submit_button.pack(pady=10)
 
-    root.withdraw()  # Hide the main window until the master key is validated
-
-# Main application loop
+# Create the folder if it doesn't exist
 create_titanlock_folder()
+
+# Load stored passwords into the table
+load_passwords()
+
+# Open the master key entry window (blocking the main window until validated)
+root.withdraw()  # Hide the main window
 open_master_key_window()
+
+# Run the Tkinter event loop
 root.mainloop()
