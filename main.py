@@ -170,7 +170,6 @@ def generate_password(length, include_uppercase, include_numbers, include_specia
     generated_password_entry.config(state=NORMAL)  # Allow editing
     generated_password_entry.delete(0, END)  # Clear current value
     generated_password_entry.insert(0, password)  # Insert new password
-    generated_password_entry.config(state=DISABLED)  # Disable editing
 
 # Create root window
 root = Tk()
