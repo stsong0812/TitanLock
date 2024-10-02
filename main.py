@@ -163,7 +163,7 @@ def create_titanlock_folder():
     except Exception as e:
         print(f"An error occurred while creating the folder: {e}")
 
-# Include master key function
+# Include master key function with validation
 def open_master_key_window():
     master_key_window = Toplevel(root)
     master_key_window.geometry('800x500')
@@ -177,25 +177,35 @@ def open_master_key_window():
     # Function to validate key
     def validate_master_key():
         master_key_path = '/etc/TitanLock/masterkey.txt'
-        master_key_plain = master_key_entry.get()
+        entered_master_key = master_key_entry.get()
+
+        # If master key file does not exist, create it
         if not os.path.exists(master_key_path):
             try:
                 with open(master_key_path, 'w') as master_key_file:
-                    master_key_file.write(master_key_plain)  # Write the master key to the file
+                    master_key_file.write(entered_master_key)  # Write the master key to the file
                     print(f"Master key file created at {master_key_path}")
+                    master_key_window.destroy()
+                    root.deiconify()  # Unlock the main window
             except Exception as e:
                 print(f"An error occurred while creating the file: {e}")
         else:
-            print("Master key file already exists.")
-
-        if master_key_plain:
-            master_key_window.destroy()
-            root.deiconify()
+            # If master key file exists, validate the entered key
+            try:
+                with open(master_key_path, 'r') as master_key_file:
+                    stored_master_key = master_key_file.read().strip()  # Read the stored key
+                    if entered_master_key == stored_master_key:
+                        master_key_window.destroy()
+                        root.deiconify()  # Unlock the main window
+                    else:
+                        showwarning("Invalid Key", "The entered master key is incorrect.")
+            except Exception as e:
+                print(f"An error occurred while reading the file: {e}")
 
     submit_button = Button(master_key_window, text="Submit", command=validate_master_key)
     submit_button.pack(pady=10)
 
-    root.withdraw()
+    root.withdraw()  # Hide the main window until the master key is validated
 
 # Main application loop
 create_titanlock_folder()
