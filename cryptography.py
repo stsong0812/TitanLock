@@ -50,9 +50,10 @@ def decrypt(aes_key, encryptedText):
     iv = encryptedText[:16]
     #a cipher object is created same as before using the decoded data minus the IV
     cipherText = encryptedText[16:]
-    #The cipher is decrypted using the cipher object, which returns the padded password
+    #The cipher object is created using the IV we seperated from the encrypted password,
     cipher = AES.new(aes_key, AES.MODE_CBC, iv)
-    #the password is then unpadded, then its decoded, and returned as a string
+    #The cipher is decrypted using the cipher object, and then it is unpadded
     decrypted = unpad(cipher.decrypt(cipherText), AES.block_size)
+    #The password is then decoded and returned in the form of plaintext as a string
     return decrypted.decode('utf-8')
 
