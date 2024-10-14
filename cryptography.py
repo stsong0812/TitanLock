@@ -48,7 +48,7 @@ def decrypt(aes_key, encryptedText):
     encryptedText = base64.b64decode(encryptedText)
     #the IV is then seperated from the decoded data, the encryption function adds it to the beggining of the password so we seperate the first 16 bytes
     iv = encryptedText[:16]
-    #a cipher object is created same as before using the decoded data minus the IV
+    #the ciphered text is then seperated from the IV into its own object
     cipherText = encryptedText[16:]
     #The cipher object is created using the IV we seperated from the encrypted password,
     cipher = AES.new(aes_key, AES.MODE_CBC, iv)
