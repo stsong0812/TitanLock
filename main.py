@@ -77,6 +77,7 @@ def unmask_password(entry_id):
     # Create a dialog to enter the master key for verification
     verification_window = Toplevel(root)
     verification_window.title("Titan Lock")
+    verification_window.geometry("300x150")
 
     master_key_label = Label(verification_window, text="Enter Master Key:")
     master_key_label.pack(pady=10)
