@@ -1,5 +1,4 @@
-from tkinter import Tk, Toplevel, Label, Entry, Button, END, NORMAL, DISABLED
-from tkinter import ttk
+from tkinter import Tk, Toplevel, Label, Entry, Button, END, NORMAL, ttk
 from passwords_frame import create_passwords_frame
 from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
@@ -134,9 +133,41 @@ def verify_password(stored_hash, provided_password):
     except argon2_exceptions.VerifyMismatchError:
         return False
 
-# AES (Fernet) key generation and encryption/decryption functions
-# For the demo, we generate a new key each time. In practice, securely store and load this key.
-key = Fernet.generate_key()  # In practice, store this securely and load it when needed.
+# Path to the file where the encryption key will be stored
+KEY_FILE_PATH = '/etc/TitanLock/fernet_key.key'
+
+# Function to generate and store the Fernet encryption key if it doesn't already exist
+def load_or_generate_key():
+    # Check if the key file exists
+    if os.path.exists(KEY_FILE_PATH):
+        # Load the existing key from the file
+        try:
+            with open(KEY_FILE_PATH, 'rb') as key_file:
+                key = key_file.read()
+                print("Encryption key loaded successfully.")
+                return key
+        except Exception as e:
+            print(f"An error occurred while loading the encryption key: {e}")
+            return None
+    else:
+        # Generate a new key and store it securely
+        key = Fernet.generate_key()
+        try:
+            with open(KEY_FILE_PATH, 'wb') as key_file:
+                key_file.write(key)
+                print("Encryption key generated and saved successfully.")
+                return key
+        except Exception as e:
+            print(f"An error occurred while saving the encryption key: {e}")
+            return None
+
+# Load or generate the encryption key
+key = load_or_generate_key()
+if key is None:
+    print("Failed to load or generate encryption key. Exiting program.")
+    exit()
+
+# Initialize the Fernet encryption object with the loaded key
 fernet = Fernet(key)
 
 # Function to encrypt a password using AES (Fernet)
