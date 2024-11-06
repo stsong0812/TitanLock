@@ -301,40 +301,41 @@ def open_add_entry_window():
     submit_button.pack(pady=10)
 
 # Function to check password strength
-def check_password_strength(password):
+def check_password_strength(password, strength_label):
     score = 0
 
-    # Password length check
-    if len(password) >= 12:
+    # Password length check with scoring for additional length
+    if len(password) >= 16:
+        score += 3  # Strong score for longer passwords
+    elif len(password) >= 12:
         score += 2
     elif len(password) >= 8:
         score += 1
-    
-    # Checking for lowercase characters
-    if re.search(r'[a-z]', password):
-        score += 1
-    # Checking for uppercase characters
-    if re.search(r'[A-Z]', password):
-        score += 1
-    # Checking for digits
-    if re.search(r'[0-9]', password):
-        score += 1
-    # Checking for special characters
-    if re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+
+    # Check if it contains multiple random, unrelated words (e.g., a passphrase)
+    if re.search(r'(\w+\s+){2,}\w+', password):  # checks for at least three words with spaces
+        score += 2
+
+    # Check for absence of common patterns or personal info
+    common_patterns = ['password', '1234', 'abcd', 'qwerty', 'user', 'admin']
+    if not any(pattern in password.lower() for pattern in common_patterns):
         score += 1
 
-    # Check for common passwords (simple example)
-    common_passwords = ["password", "123456", "123456789", "qwerty", "abc123"]
-    if password.lower() in common_passwords:
-        score -= 2
+    # Check for character variety, though not strictly enforcing complexity
+    if any(char.isupper() for char in password) and any(char.islower() for char in password):
+        score += 1  # Includes both uppercase and lowercase for additional variety
+    if any(char.isdigit() for char in password):
+        score += 1  # Includes numbers
+    if any(char in "!@#$%^&*(),.?\":{}|<>" for char in password):
+        score += 1  # Includes special characters
 
-    # Display password strength based on score
-    if score >= 5:
-        strength_label.config(text="Password strength: Strong")
-    elif 3 <= score < 5:
-        strength_label.config(text="Password strength: Moderate")
+    # Display password strength based on cumulative score
+    if score >= 7:
+        strength_label.config(text="Password strength: Strong", fg="green")
+    elif 4 <= score < 7:
+        strength_label.config(text="Password strength: Moderate", fg="orange")
     else:
-        strength_label.config(text="Password strength: Weak")
+        strength_label.config(text="Password strength: Weak", fg="red")
     
 # Password generation algorithm 
 def generate_password(length, include_uppercase, include_numbers, include_special_chars):
@@ -462,49 +463,105 @@ def create_titanlock_folder():
     except Exception as e:
         print(f"An error occurred while creating the folder: {e}")
 
-# Include master key function with validation
+def validate_master_key(entered_master_key, master_key_window):
+    """Validates the entered master key against the stored master key hash."""
+    master_key_path = '/etc/TitanLock/masterkey.txt'
+    try:
+        with open(master_key_path, 'r') as master_key_file:
+            stored_master_key_hash = master_key_file.read()
+        if verify_password(stored_master_key_hash, entered_master_key):
+            print("Master key validated.")
+            root.deiconify()  # Unlock the main window if the key is valid
+            master_key_window.destroy()  # Close the master key window
+        else:
+            showwarning("Invalid Master Key", "The entered master key is incorrect.")
+    except Exception as e:
+        print(f"An error occurred while validating the master key: {e}")
+
 def open_master_key_window():
     master_key_window = Toplevel(root)
     master_key_window.title("Titan Lock")
-    master_key_window.geometry("300x150")
+    master_key_window.geometry("800x500")
 
+    # Label to prompt for the master key
     master_key_label = Label(master_key_window, text="Enter Master Key:")
     master_key_label.pack(pady=10)
 
     master_key_entry = Entry(master_key_window, show="*")
     master_key_entry.pack(pady=10)
 
-    # Validate master key function with hashing
-    def validate_master_key():
-        master_key_path = '/etc/TitanLock/masterkey.txt'
-        entered_master_key = master_key_entry.get()
+    # Introductory paragraph for master password guidance
+    suggestions_paragraph = Label(master_key_window, text=(
+        "Consider the following suggestions for creating a secure master password, based on NIST SP 800-63B standards "
+        "for memorized secrets. These guidelines help ensure your password is strong and secure:"
+    ), wraplength=500, justify="left")
+    suggestions_paragraph.pack(pady=(10, 10), padx=20)  # Added spacing after paragraph
 
-        # If master key file does not exist, create it with a hashed key
-        if not os.path.exists(master_key_path):
-            try:
-                hashed_master_key = hash_password(entered_master_key)
-                with open(master_key_path, 'w') as master_key_file:
-                    master_key_file.write(hashed_master_key)  # Store the hashed key
-                    print(f"Master key file created at {master_key_path}")
-                    master_key_window.destroy()
-                    root.deiconify()  # Unlock the main window
-            except Exception as e:
-                print(f"An error occurred while creating the file: {e}")
+    # Updated list of suggestions for a secure master password
+    list_items = [
+        "Use at least 12 characters (16+ is recommended for stronger security)",
+        "Consider using a passphrase of random, unrelated words for memorability",
+        "Avoid common words, predictable sequences, or personal information",
+        "Ensure uniqueness – do not reuse a password used on other accounts",
+        "Avoid patterns like '1234' or repetitive characters (e.g., 'aaaa')"
+    ]
+
+    # Add each suggestion as a labeled bullet point with indentation
+    for item in list_items:
+        list_item_label = Label(master_key_window, text=f"• {item}", anchor="w", justify="left", fg="black", wraplength=500)
+        list_item_label.pack(anchor="w", padx=165, pady=2)  # Increased padding for indentation and spacing between items
+
+    # Label to display password strength
+    password_strength_label = Label(master_key_window, text="Password strength: ")
+    password_strength_label.pack(pady=10)
+
+    # Function to check the master password strength
+    def check_master_password_strength(event=None):
+        password = master_key_entry.get()
+        score = 0
+
+        # Password length check with scoring for additional length
+        if len(password) >= 16:
+            score += 3  # Strong score for longer passwords
+        elif len(password) >= 12:
+            score += 2
+        elif len(password) >= 8:
+            score += 1
+
+        # Check if it contains multiple random, unrelated words (e.g., a passphrase)
+        if re.search(r'(\w+\s+){2,}\w+', password):  # checks for at least three words with spaces
+            score += 2
+
+        # Check for absence of common patterns or personal info
+        common_patterns = ['password', '1234', 'abcd', 'qwerty', 'user', 'admin']
+        if not any(pattern in password.lower() for pattern in common_patterns):
+            score += 1
+
+        # Check for character variety, though not strictly enforcing complexity
+        if any(char.isupper() for char in password) and any(char.islower() for char in password):
+            score += 1  # Includes both uppercase and lowercase for additional variety
+        if any(char.isdigit() for char in password):
+            score += 1  # Includes numbers
+        if any(char in "!@#$%^&*(),.?\":{}|<>" for char in password):
+            score += 1  # Includes special characters
+
+        # Display password strength based on cumulative score
+        if score >= 7:
+            password_strength_label.config(text="Password strength: Strong", fg="green")
+        elif 4 <= score < 7:
+            password_strength_label.config(text="Password strength: Moderate", fg="orange")
         else:
-            # If master key file exists, validate the entered key
-            try:
-                with open(master_key_path, 'r') as master_key_file:
-                    stored_master_key_hash = master_key_file.read()
-                if verify_password(stored_master_key_hash, entered_master_key):
-                    print("Master key validated.")
-                    master_key_window.destroy()  # Close the master key window
-                    root.deiconify()  # Unlock the main window
-                else:
-                    showwarning("Invalid Master Key", "The entered master key is incorrect.")
-            except Exception as e:
-                print(f"An error occurred while validating the master key: {e}")
+            password_strength_label.config(text="Password strength: Weak", fg="red")
 
-    submit_button = Button(master_key_window, text="Submit", command=validate_master_key)
+    # Bind the password strength function to the Entry widget
+    master_key_entry.bind("<KeyRelease>", check_master_password_strength)
+
+    # Button to submit the master key
+    submit_button = Button(
+        master_key_window,
+        text="Submit",
+        command=lambda: validate_master_key(master_key_entry.get(), master_key_window)
+    )
     submit_button.pack(pady=10)
 
 # Hide main window initially until master key is entered
