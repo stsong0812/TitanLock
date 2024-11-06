@@ -1,4 +1,4 @@
-from tkinter import Tk, Toplevel, Label, Entry, Button, END, NORMAL, ttk
+from tkinter import Tk, Toplevel, Label, Entry, Button, END, NORMAL, ttk, Checkbutton, BooleanVar
 from passwords_frame import create_passwords_frame
 from password_strength_frame import create_password_strength_frame
 from password_generation_frame import create_password_generation_frame
@@ -6,12 +6,40 @@ from settings_frame import create_settings_frame
 from tkinter.messagebox import showwarning
 from argon2 import PasswordHasher, exceptions as argon2_exceptions
 from cryptography.fernet import Fernet
+import configparser
 import secrets
 import string
 import re
 import os
 import csv
 import uuid
+
+# Define path for settings file
+SETTINGS_FILE_PATH = '/etc/TitanLock/settings.conf'
+
+def load_settings():
+    """Load settings from the configuration file, or set default values if file doesn't exist."""
+    config = configparser.ConfigParser()
+    if os.path.exists(SETTINGS_FILE_PATH):
+        config.read(SETTINGS_FILE_PATH)
+        dark_mode = config.getboolean('Display', 'dark_mode', fallback=False)
+    else:
+        dark_mode = False  # Default value if no config file exists
+
+    return {'dark_mode': dark_mode}
+
+def save_settings(dark_mode):
+    """Save settings to the configuration file."""
+    config = configparser.ConfigParser()
+    config['Display'] = {'dark_mode': str(dark_mode)}
+
+    # Ensure /etc/TitanLock directory exists
+    os.makedirs(os.path.dirname(SETTINGS_FILE_PATH), exist_ok=True)
+
+    # Write the settings to the file
+    with open(SETTINGS_FILE_PATH, 'w') as configfile:
+        config.write(configfile)
+    print("Settings saved.")
 
 def prompt_for_master_key(callback):
     """Prompts the user for the master key."""
@@ -348,6 +376,15 @@ root = Tk()
 root.title('Titan Lock')
 root.geometry('800x500')    # Set (width x height)
 
+# Load settings at startup
+settings = load_settings()
+dark_mode_enabled = settings['dark_mode']
+
+# Initialize the dark mode variable after creating `root`
+dark_mode_var = BooleanVar(root)
+dark_mode_var.trace_add("write", lambda *args: toggle_dark_mode(dark_mode_var.get()))
+
+
 # Using notebook widget to create tabs
 notebook = ttk.Notebook(root)
 notebook.pack(pady=10, expand=True, fill='both')
@@ -356,12 +393,61 @@ notebook.pack(pady=10, expand=True, fill='both')
 passwords_frame, tree = create_passwords_frame(notebook, open_add_entry_window, remove_entry, toggle_password_visibility)
 password_strength_frame, strength_label = create_password_strength_frame(check_password_strength)
 password_generation_frame, generated_password_entry = create_password_generation_frame(generate_password)
-settings_frame = create_settings_frame()
+settings_frame = create_settings_frame(dark_mode_var, save_settings)
 
 notebook.add(passwords_frame, text='Passwords')
 notebook.add(password_strength_frame, text='Password Strength')
 notebook.add(password_generation_frame, text='Password Generation')
 notebook.add(settings_frame, text='Settings')
+
+def toggle_dark_mode(enabled):
+    # Define colors for dark and light mode
+    bg_color = "#2E2E2E" if enabled else "#d9d9d9"  # Dark or light background
+    fg_color = "#FFFFFF" if enabled else "#000000"  # Dark or light foreground
+    selected_tab_color = "#3A3A3A" if enabled else "#d9d9d9"  # Slightly lighter color for selected tab in dark mode
+    header_bg_color = "#3E3E3E" if enabled else "#d9d9d9"  # Darker color for the header
+    row_bg_color = "#4A4A4A" if enabled else "#FFFFFF"  # Slightly lighter gray for the table rows
+
+    # Update the root window background color
+    root.config(bg=bg_color)
+
+    # Create or modify the style for notebook tabs
+    style = ttk.Style()
+    if enabled:
+        style.configure("TNotebook", background=bg_color)
+        style.configure("TNotebook.Tab", background=bg_color, foreground=fg_color)
+
+        # Define a slightly lighter color for the active tab in dark mode
+        style.map("TNotebook.Tab",
+                  background=[("selected", selected_tab_color)],
+                  foreground=[("selected", fg_color)])
+
+        # Configure Treeview for dark mode
+        style.configure("Treeview", background=row_bg_color, fieldbackground=row_bg_color, foreground=fg_color)
+        style.configure("Treeview.Heading", background=header_bg_color, foreground=fg_color)
+    else:
+        # Reset to default colors in light mode
+        style.configure("TNotebook", background="#d9d9d9")
+        style.configure("TNotebook.Tab", background="#d9d9d9", foreground="#000000")
+        style.map("TNotebook.Tab",
+                  background=[("selected", "#d9d9d9")],
+                  foreground=[("selected", "#000000")])
+
+        # Configure Treeview for light mode
+        style.configure("Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", foreground="#000000")
+        style.configure("Treeview.Heading", background="#d9d9d9", foreground="#000000")
+
+    # Update each frame and its widgets
+    for frame in [passwords_frame, password_strength_frame, password_generation_frame, settings_frame]:
+        frame.config(bg=bg_color)
+        for widget in frame.winfo_children():
+            if isinstance(widget, (Label, Entry, Button, Checkbutton)):
+                widget.config(bg=bg_color, fg=fg_color)
+
+    # Apply the style to notebook and its tabs
+    notebook.configure(style="TNotebook")
+
+toggle_dark_mode(dark_mode_enabled)
 
 # Function to create a folder in /etc/ called TitanLock
 def create_titanlock_folder():
@@ -401,7 +487,7 @@ def open_master_key_window():
                     master_key_file.write(hashed_master_key)  # Store the hashed key
                     print(f"Master key file created at {master_key_path}")
                     master_key_window.destroy()
-                    root.deiconify()  # Unlock the main window``
+                    root.deiconify()  # Unlock the main window
             except Exception as e:
                 print(f"An error occurred while creating the file: {e}")
         else:
