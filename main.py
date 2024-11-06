@@ -13,30 +13,35 @@ import re
 import os
 import csv
 import uuid
+import time
+from threading import Timer
 
 # Define path for settings file
 SETTINGS_FILE_PATH = '/etc/TitanLock/settings.conf'
 
+# Load settings function in main.py
 def load_settings():
     """Load settings from the configuration file, or set default values if file doesn't exist."""
     config = configparser.ConfigParser()
     if os.path.exists(SETTINGS_FILE_PATH):
         config.read(SETTINGS_FILE_PATH)
         dark_mode = config.getboolean('Display', 'dark_mode', fallback=False)
+        auto_lock_timeout = config.getint('Security', 'auto_lock_timeout', fallback=300)  # Default to 5 minutes (300 seconds)
     else:
         dark_mode = False  # Default value if no config file exists
+        auto_lock_timeout = 300
 
-    return {'dark_mode': dark_mode}
+    return {'dark_mode': dark_mode, 'auto_lock_timeout': auto_lock_timeout}
 
-def save_settings(dark_mode):
+# Save settings function in main.py
+def save_settings(dark_mode, auto_lock_timeout):
     """Save settings to the configuration file."""
     config = configparser.ConfigParser()
     config['Display'] = {'dark_mode': str(dark_mode)}
+    config['Security'] = {'auto_lock_timeout': str(auto_lock_timeout)}
 
-    # Ensure /etc/TitanLock directory exists
     os.makedirs(os.path.dirname(SETTINGS_FILE_PATH), exist_ok=True)
 
-    # Write the settings to the file
     with open(SETTINGS_FILE_PATH, 'w') as configfile:
         config.write(configfile)
     print("Settings saved.")
@@ -385,6 +390,42 @@ dark_mode_enabled = settings['dark_mode']
 dark_mode_var = BooleanVar(root)
 dark_mode_var.trace_add("write", lambda *args: toggle_dark_mode(dark_mode_var.get()))
 
+# Set the initial timeout and timer variable
+timeout_duration = settings['auto_lock_timeout']
+timeout_timer = None
+
+# Function to lock the app by hiding the main window and showing the master key window
+def lock_app():
+    if root.state() == "normal":  # Prevent multiple master key windows
+        root.withdraw()  # Hide the main window
+        open_master_key_window()  # Reopen master key window for re-authentication
+
+# Function to reset the timer with each activity, only if main window is visible
+def reset_timer(event=None):
+    global timeout_timer
+    if root.state() == "normal":  # Only reset timer if main window is visible
+        if timeout_timer:
+            timeout_timer.cancel()
+        timeout_timer = Timer(timeout_duration, lock_app)
+        timeout_timer.start()
+
+# Bind reset_timer to user actions to reset on any activity
+root.bind_all("<Any-KeyPress>", reset_timer)
+root.bind_all("<Any-ButtonPress>", reset_timer)
+root.bind_all("<Motion>", reset_timer)
+
+# Start the timer for the first time
+reset_timer()   
+
+# Load settings at startup
+settings = load_settings()
+dark_mode_enabled = settings['dark_mode']
+auto_lock_timeout = settings['auto_lock_timeout']  # Retrieve auto_lock_timeout
+
+# Initialize the dark mode variable after creating `root`
+dark_mode_var = BooleanVar(root)
+dark_mode_var.set(dark_mode_enabled)  # Set initial dark mode state
+dark_mode_var.trace_add("write", lambda *args: toggle_dark_mode(dark_mode_var.get()))
 
 # Using notebook widget to create tabs
 notebook = ttk.Notebook(root)
@@ -394,7 +435,9 @@ notebook.pack(pady=10, expand=True, fill='both')
 passwords_frame, tree = create_passwords_frame(notebook, open_add_entry_window, remove_entry, toggle_password_visibility)
 password_strength_frame, strength_label = create_password_strength_frame(check_password_strength)
 password_generation_frame, generated_password_entry = create_password_generation_frame(generate_password)
-settings_frame = create_settings_frame(dark_mode_var, save_settings)
+
+# Pass `dark_mode_var`, `save_settings` callback, and `auto_lock_timeout` to the settings frame
+settings_frame = create_settings_frame(dark_mode_var, save_settings, auto_lock_timeout)
 
 notebook.add(passwords_frame, text='Passwords')
 notebook.add(password_strength_frame, text='Password Strength')
@@ -463,20 +506,32 @@ def create_titanlock_folder():
     except Exception as e:
         print(f"An error occurred while creating the folder: {e}")
 
+# Function to validate the master key and only start the timer if validation is successful
 def validate_master_key(entered_master_key, master_key_window):
-    """Validates the entered master key against the stored master key hash."""
     master_key_path = '/etc/TitanLock/masterkey.txt'
     try:
         with open(master_key_path, 'r') as master_key_file:
             stored_master_key_hash = master_key_file.read()
         if verify_password(stored_master_key_hash, entered_master_key):
             print("Master key validated.")
-            root.deiconify()  # Unlock the main window if the key is valid
             master_key_window.destroy()  # Close the master key window
+            root.deiconify()  # Show main window
+            reset_timer()  # Start the auto-lock timer after unlocking
         else:
             showwarning("Invalid Master Key", "The entered master key is incorrect.")
     except Exception as e:
         print(f"An error occurred while validating the master key: {e}")
+        
+# Initialize the timeout duration when loading settings
+timeout_duration = settings['auto_lock_timeout']
+
+# When saving settings, update the timeout duration
+def save_settings_callback(dark_mode, auto_lock_timeout):
+    save_settings(dark_mode, auto_lock_timeout)
+    global timeout_duration
+    timeout_duration = auto_lock_timeout
+    reset_timer()  # Reset timer with new duration after saving
+
 
 def open_master_key_window():
     master_key_window = Toplevel(root)
@@ -514,6 +569,14 @@ def open_master_key_window():
     # Label to display password strength
     password_strength_label = Label(master_key_window, text="Password strength: ")
     password_strength_label.pack(pady=10)
+    
+    # Submit button triggers master key validation without starting the timer
+    submit_button = Button(
+        master_key_window,
+        text="Submit",
+        command=lambda: validate_master_key(master_key_entry.get(), master_key_window)
+    )
+    submit_button.pack(pady=10)
 
     # Function to check the master password strength
     def check_master_password_strength(event=None):
@@ -562,7 +625,11 @@ def open_master_key_window():
         text="Submit",
         command=lambda: validate_master_key(master_key_entry.get(), master_key_window)
     )
-    submit_button.pack(pady=10)
+    
+root.bind_all("<Any-KeyPress>", reset_timer)
+root.bind_all("<Any-ButtonPress>", reset_timer)
+root.bind_all("<Motion>", reset_timer)
+
 
 # Hide main window initially until master key is entered
 root.withdraw()
