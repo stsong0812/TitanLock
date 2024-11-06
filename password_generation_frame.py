@@ -5,7 +5,7 @@ def create_password_generation_frame(generate_password_callback):
     password_generation_frame = Frame()
     password_generation_frame.pack(fill='both', expand=True)
 
-    password_generation_label = Label(password_generation_frame, text="Generate a password here")
+    password_generation_label = Label(password_generation_frame, text="Password Generator", font=("TkDefaultFont", 12, "bold"))
     password_generation_label.pack(pady=10)
 
     length_label = Label(password_generation_frame, text="Password Length (6-20 characters):")

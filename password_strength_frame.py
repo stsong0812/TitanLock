@@ -7,7 +7,7 @@ def create_password_strength_frame(check_strength_callback):
     password_strength_frame.pack(fill='both', expand=True)
 
     # Label for instruction
-    password_strength_label = Label(password_strength_frame, text="Enter a password to check its strength")
+    password_strength_label = Label(password_strength_frame, text="Password Strength Checker", font=("TkDefaultFont", 12, "bold"))
     password_strength_label.pack(pady=10)
 
     # Entry for entering password to check strength

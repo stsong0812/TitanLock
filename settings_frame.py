@@ -4,7 +4,7 @@ def create_settings_frame(dark_mode_var, save_settings_callback, auto_lock_timeo
     settings_frame = Frame()
     settings_frame.pack(fill='both', expand=True)
 
-    settings_label = Label(settings_frame, text="Settings")
+    settings_label = Label(settings_frame, text="Settings", font=("TkDefaultFont", 12, "bold"))
     settings_label.pack(pady=10)
 
     # Enable dark mode checkbox, bound to the `dark_mode_var`

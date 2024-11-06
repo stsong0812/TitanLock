@@ -7,7 +7,7 @@ def create_passwords_frame(notebook, add_entry_callback, remove_entry_callback, 
     passwords_frame.pack(fill='both', expand=True)
 
     # Label to describe the frame
-    passwords_label = Label(passwords_frame, text="Manage your passwords here")
+    passwords_label = Label(passwords_frame, text="Passwords", font=("TkDefaultFont", 12, "bold"))
     passwords_label.pack(pady=10)
 
     # Treeview to display the stored passwords
