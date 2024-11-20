@@ -1,4 +1,5 @@
-from tkinter import Frame, Label, Entry, Button
+from tkinter import Frame, Label, Entry
+import re
 
 # Function to create password strength tab (frame)
 def create_password_strength_frame(check_strength_callback):
@@ -44,3 +45,40 @@ def create_password_strength_frame(check_strength_callback):
         list_item_label.pack(anchor="w", padx=165, pady=2)
 
     return password_strength_frame, strength_label
+
+# Function to check password strength
+def check_password_strength(password, strength_label):
+    score = 0
+
+    # Password length check with scoring for additional length
+    if len(password) >= 16:
+        score += 3  # Strong score for longer passwords
+    elif len(password) >= 12:
+        score += 2
+    elif len(password) >= 8:
+        score += 1
+
+    # Check if it contains multiple random, unrelated words (e.g., a passphrase)
+    if re.search(r'(\w+\s+){2,}\w+', password):  # checks for at least three words with spaces
+        score += 2
+
+    # Check for absence of common patterns or personal info
+    common_patterns = ['password', '1234', 'abcd', 'qwerty', 'user', 'admin']
+    if not any(pattern in password.lower() for pattern in common_patterns):
+        score += 1
+
+    # Check for character variety, though not strictly enforcing complexity
+    if any(char.isupper() for char in password) and any(char.islower() for char in password):
+        score += 1  # Includes both uppercase and lowercase for additional variety
+    if any(char.isdigit() for char in password):
+        score += 1  # Includes numbers
+    if any(char in "!@#$%^&*(),.?\":{}|<>" for char in password):
+        score += 1  # Includes special characters
+
+    # Display password strength based on cumulative score
+    if score >= 7:
+        strength_label.config(text="Password strength: Strong", fg="green")
+    elif 4 <= score < 7:
+        strength_label.config(text="Password strength: Moderate", fg="orange")
+    else:
+        strength_label.config(text="Password strength: Weak", fg="red")
