@@ -1,36 +1,49 @@
-from tkinter import Frame, Label, Entry
+import customtkinter as ctk
 import re
 
-# Function to create password strength tab (frame)
-def create_password_strength_frame(check_strength_callback):
-    # Frame for password strength checker
-    password_strength_frame = Frame()
-    password_strength_frame.pack(fill='both', expand=True)
+# Function to create the password strength tab (frame)
+def create_password_strength_frame(master, check_strength_callback):
+    # Frame for the password strength checker
+    password_strength_frame = ctk.CTkFrame(master)
+    password_strength_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-    # Label for instruction
-    password_strength_label = Label(password_strength_frame, text="Password Strength Checker", font=("TkDefaultFont", 12, "bold"))
-    password_strength_label.pack(pady=10)
+    # Configure grid weights for centering all content
+    password_strength_frame.grid_rowconfigure(0, weight=1)  # Spacer above content
+    password_strength_frame.grid_rowconfigure(1, weight=0)  # Content rows
+    password_strength_frame.grid_rowconfigure(2, weight=0)
+    password_strength_frame.grid_rowconfigure(3, weight=0)
+    password_strength_frame.grid_rowconfigure(4, weight=0)
+    password_strength_frame.grid_rowconfigure(5, weight=1)  # Spacer below content
+    password_strength_frame.grid_columnconfigure(0, weight=1)  # Center content horizontally
 
-    # Entry for entering password to check strength
-    password_entry_strength = Entry(password_strength_frame, show="*")
-    password_entry_strength.pack(pady=5)
+    # Title Label
+    password_strength_label = ctk.CTkLabel(
+        password_strength_frame, 
+        text="Password Strength Checker", 
+        font=ctk.CTkFont(size=16, weight="bold")
+    )
+    password_strength_label.grid(row=1, column=0, pady=10, sticky="n")
+
+    # Entry for entering a password to check its strength
+    password_entry_strength = ctk.CTkEntry(password_strength_frame, placeholder_text="Enter password", show="*")
+    password_entry_strength.grid(row=2, column=0, pady=10, sticky="ew", padx=100)  # Center entry field
 
     # Label to display the strength of the password
-    strength_label = Label(password_strength_frame, text="Password strength: ")
-    strength_label.pack(pady=10)
+    strength_label = ctk.CTkLabel(password_strength_frame, text="Password strength: ", font=ctk.CTkFont(size=12))
+    strength_label.grid(row=3, column=0, pady=10, sticky="n")
 
     # Bind the real-time strength-checking function
     password_entry_strength.bind("<KeyRelease>", lambda event: check_strength_callback(password_entry_strength.get(), strength_label))
 
-    # Introductory paragraph for guidance
+    # Paragraph for guidance on password strength
     paragraph_text = (
         "This tool helps you check the strength of your master password, following recommendations from the "
         "National Institute of Standards and Technology (NIST) for memorized secrets in publication SP 800-63B:"
     )
-    paragraph_label = Label(password_strength_frame, text=paragraph_text, wraplength=500, justify="left")
-    paragraph_label.pack(pady=10, padx=20)
+    paragraph_label = ctk.CTkLabel(password_strength_frame, text=paragraph_text, wraplength=600, justify="center")
+    paragraph_label.grid(row=4, column=0, pady=10, sticky="n")
 
-    # Updated list items based on NIST recommendations for master passwords
+    # Recommendations list based on NIST guidelines
     list_items = [
         "Use at least 12 characters (16+ is recommended for stronger security)",
         "Consider using a passphrase of random, unrelated words for memorability",
@@ -39,10 +52,17 @@ def create_password_strength_frame(check_strength_callback):
         "Avoid patterns like '1234' or repetitive characters (e.g., 'aaaa')"
     ]
 
-    # Display each suggestion as a labeled bullet point
-    for item in list_items:
-        list_item_label = Label(password_strength_frame, text=f"• {item}", anchor="w", justify="left", wraplength=500)
-        list_item_label.pack(anchor="w", padx=165, pady=2)
+    # Frame for recommendations to center-align the list
+    recommendations_frame = ctk.CTkFrame(password_strength_frame)
+    recommendations_frame.grid(row=5, column=0, pady=10, sticky="n")
+    recommendations_frame.grid_columnconfigure(0, weight=1)
+
+    # Display each recommendation as a labeled bullet point
+    for index, item in enumerate(list_items):
+        list_item_label = ctk.CTkLabel(
+            recommendations_frame, text=f"• {item}", anchor="w", wraplength=600, justify="left"
+        )
+        list_item_label.grid(row=index, column=0, padx=10, pady=2, sticky="w")
 
     return password_strength_frame, strength_label
 
@@ -59,7 +79,7 @@ def check_password_strength(password, strength_label):
         score += 1
 
     # Check if it contains multiple random, unrelated words (e.g., a passphrase)
-    if re.search(r'(\w+\s+){2,}\w+', password):  # checks for at least three words with spaces
+    if re.search(r'(\w+\s+){2,}\w+', password):  # Checks for at least three words with spaces
         score += 2
 
     # Check for absence of common patterns or personal info
@@ -77,8 +97,8 @@ def check_password_strength(password, strength_label):
 
     # Display password strength based on cumulative score
     if score >= 7:
-        strength_label.config(text="Password strength: Strong", fg="green")
+        strength_label.configure(text="Password strength: Strong", text_color="green")
     elif 4 <= score < 7:
-        strength_label.config(text="Password strength: Moderate", fg="orange")
+        strength_label.configure(text="Password strength: Moderate", text_color="orange")
     else:
-        strength_label.config(text="Password strength: Weak", fg="red")
+        strength_label.configure(text="Password strength: Weak", text_color="red")
