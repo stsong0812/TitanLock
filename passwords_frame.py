@@ -69,7 +69,6 @@ def create_passwords_frame(master, verify_password_callback):
                 print(f"Error saving password to CSV: {e}")
                 messagebox.showerror("Error", "Failed to save password. Please try again.")
 
-
     # Function to remove a selected password
     def remove_password():
         selected_item = tree.selection()
@@ -114,20 +113,51 @@ def create_passwords_frame(master, verify_password_callback):
 
         messagebox.showinfo("Remove Entry", "Selected entry has been removed.")
 
-    # Function to show passwords after verifying the master password
-    def show_passwords():
-        master_password = simpledialog.askstring("Verify Master Password", "Enter master password:", show="*")
-        try:
-            with open("/etc/TitanLock/masterkey.txt", "r") as hash_file:
-                stored_hash = hash_file.read().strip()
-            if verify_password_callback(stored_hash, master_password):
-                for i, (record_id, website, username, password) in enumerate(password_data):
+    # Function to toggle between showing and hiding passwords
+    def toggle_passwords():
+        if toggle_passwords.showing:
+            # Hide passwords
+            for i, (record_id, website, username, password) in enumerate(password_data):
+                try:
                     item = tree.get_children()[i]
-                    tree.item(item, values=(record_id, website, username, password))
-            else:
-                messagebox.showerror("Invalid Master Password", "The master password is incorrect.")
-        except Exception as e:
-            print(f"Error verifying master password: {e}")
+                    tree.item(item, values=(record_id, website, username, "******"))  # Mask password
+                except IndexError:
+                    print(f"No item in treeview for index {i}")
+            toggle_passwords.showing = False
+            show_button.configure(text="Show Passwords")
+        else:
+            # Show selected password
+            selected_item = tree.selection()
+            if not selected_item:
+                messagebox.showinfo("Toggle Password", "Please select an entry to view its password.")
+                return
+
+            master_password = simpledialog.askstring("Verify Master Password", "Enter master password:", show="*")
+            try:
+                with open("/etc/TitanLock/masterkey.txt", "r") as hash_file:
+                    stored_hash = hash_file.read().strip()
+                if verify_password_callback(stored_hash, master_password):
+                    for item in selected_item:
+                        # Get the selected item's values
+                        values = tree.item(item, "values")
+                        record_id = int(values[0])  # Match by ID (convert record_id to int)
+
+                        # Find the corresponding entry in password_data
+                        for entry in password_data:
+                            if entry[0] == record_id:  # Match by ID
+                                _, website, username, password = entry
+                                # Update the treeview item to show the actual password
+                                tree.item(item, values=(record_id, website, username, password))
+                                break
+                    toggle_passwords.showing = True
+                    show_button.configure(text="Hide Passwords")
+                else:
+                    messagebox.showerror("Invalid Master Password", "The master password is incorrect.")
+            except Exception as e:
+                print(f"Error verifying master password: {e}")
+
+    # Initialize toggle state
+    toggle_passwords.showing = False
 
     # Button frame
     button_frame = ctk.CTkFrame(passwords_frame)
@@ -136,7 +166,7 @@ def create_passwords_frame(master, verify_password_callback):
     add_button = ctk.CTkButton(button_frame, text="Add Password", command=add_password)
     add_button.grid(row=0, column=0, padx=5)
 
-    show_button = ctk.CTkButton(button_frame, text="Show Passwords", command=show_passwords)
+    show_button = ctk.CTkButton(button_frame, text="Show Passwords", command=toggle_passwords)
     show_button.grid(row=0, column=1, padx=5)
 
     remove_button = ctk.CTkButton(button_frame, text="Remove Entry", command=remove_password)
