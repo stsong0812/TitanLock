@@ -1,12 +1,28 @@
 # TitanLock
-Centralized password manager with greater capabilities.
 
-Group Members: Steven Song, Alexandru Gonzales, Davil Gizean
+(Group Members) 
 
-Title: Titan Lock (Centralized Password Management App)
+    - Steven Song
+    - Alexandru Gonzales
+    - Davil Gizean
 
-Primary Language: Python
+(Primary Language) Python
 
-Libraries (some coming soon): Tkinter, Hashlib, random, string, fernet, bcrypt
+(Third-Party Libraries) 
 
-Summary: We want to create a centralized password manager that not only stores passwords, but generates, tests, and hashes/salts them (with other possible capabilities). We plan to create a simple and easy to use GUI that can be used by anyone. More specifically, we plan to implement a master key to access the app, a tab where passwords are stored, a tab where passwords are generated, a tab to test password strength, and a tab for any additional settings. The passwords will most likely be hashed, salted, and stored in a secure database. Password generation will make use of randomization with parameters that can change its length and complexity. Password strength checking will be carried out by a function that determines strength by examining the password length and complexity. If time allows, we would also like to implement a website to present the app, multi factor authentication, and an increased possibility for customization.
+    - customtkinter - For enhanced and modern Tkinter UI components.
+    - cryptography.fernet - For secure encryption and decryption.
+    - argon2 - For password hashing and verification.
+
+(Summary) A centralized password manager that utilizes a simple and easy to use GUI. TitanLock not only securely stores passwords, but test and generates them.
+The app contains four tabs which include the passwords tab, password strength tab, password generation tab, and settings tab. The main components of the application include, masterkey hashing and storage, password encryption and storage, password strength checking, and password generation. Currently the only supported version is for Unix systems.
+
+(Requirements) On Unix System:
+
+    - pip install customtkinter
+    - pip install cryptography
+    - pip install argon2-cffi
+
+(How to Use) Using the source files, run the python script with the command (using sudo):
+
+    sudo python3 main.py
